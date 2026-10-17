@@ -7,6 +7,9 @@ from coldguardian import (
     build_incident_report,
     build_rescue_plan,
     experimental_linear_forecast,
+    analyze_sensor_trust,
+    compute_excursion_metrics,
+    build_priority_queue,
 )
 
 
@@ -71,6 +74,25 @@ class ColdGuardianTests(unittest.TestCase):
         fc = experimental_linear_forecast(readings, self.shipments[["shipment_id", "max_temp_c"]])
         self.assertFalse(fc.empty)
         self.assertTrue(np.allclose(fc["forecast_temperature_c"], 5.0))
+
+    def test_sensor_trust_is_bounded_and_missing_data_reduces_trust(self):
+        trust = analyze_sensor_trust(self.shipments, self.readings, self.quality)
+        self.assertTrue(trust["sensor_trust_score"].between(0, 100).all())
+        s2 = trust.loc[trust.shipment_id == "S2"].iloc[0]
+        self.assertEqual(s2["sensor_trust_score"], 0)
+        self.assertIn("No valid", s2["sensor_trust_reasons"])
+
+    def test_excursion_metrics_flag_peak_and_status(self):
+        metrics = compute_excursion_metrics(self.shipments, self.readings)
+        s1 = metrics.loc[metrics.shipment_id == "S1"].iloc[0]
+        self.assertAlmostEqual(s1["peak_temp_c"], 6.5)
+        self.assertEqual(s1["recovery_status"], "IN RANGE AT LAST READING")
+
+    def test_priority_queue_contains_explainable_score(self):
+        queue = build_priority_queue(self.shipments, self.readings, self.quality)
+        self.assertIn("priority_score", queue.columns)
+        self.assertTrue(queue["priority_score"].between(0, 100).all())
+        self.assertTrue(queue["priority_reason"].astype(str).str.len().gt(0).all())
 
     def test_short_history_is_skipped(self):
         short = pd.DataFrame({
