@@ -67,7 +67,7 @@ These tests cover only the implemented checks and do not establish clinical, reg
 
 `streamlit_app.py` provides a quiz-free operations dashboard with:
 - Shipment, excursion, data-quality, and low-trust KPIs.
-- A sortable priority queue with visible reasons and CSV export.
+- A filterable priority queue with incident-status and minimum-score filters, visible reasons, and CSV export.
 - Shipment investigation, sensor-trust reasons, and incident-report export.
 - A temperature-history plot with the configured safe band and upper/lower limits.
 - Observed excursion summaries, an experimental linear trend baseline, and facility eligibility details.
