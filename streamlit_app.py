@@ -5,7 +5,7 @@ import streamlit.components.v1 as components
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
-st.set_page_config(page_title="ColdGuardian | Mission Control", page_icon="🧊", layout="wide")
+st.set_page_config(page_title="ColdGuardian | Operations Dashboard", page_icon="🧊", layout="wide")
 
 COPY = {
  "English": {
@@ -131,73 +131,59 @@ readings=pd.read_csv(DATA/"sensor_readings.csv")
 quality=pd.read_csv(DATA/"sensor_quality_report.csv")
 qmap=quality.set_index("shipment_id")["data_quality_status"].to_dict()
 
-st.markdown(f'<div class="section">🎮 {t["mission"]}</div>',unsafe_allow_html=True)
-st.caption("PLAY A ROUND: learn how safety, time and missing information affect a decision.")
-shipment_id=st.selectbox(t["choose"],shipments["shipment_id"].tolist(),format_func=lambda sid: f"📦 {sid} — {shipments.loc[shipments.shipment_id==sid,'product'].iloc[0]}")
+st.markdown('<div class="section">🚨 LIVE OPERATIONS OVERVIEW</div>', unsafe_allow_html=True)
+st.caption("Operational dashboard using synthetic demonstration data; it is not connected to live sensors.")
+
+shipments=pd.read_csv(DATA/"shipments.csv")
+facilities=pd.read_csv(DATA/"facilities.csv")
+readings=pd.read_csv(DATA/"sensor_readings.csv")
+quality=pd.read_csv(DATA/"sensor_quality_report.csv")
+qmap=quality.set_index("shipment_id")["data_quality_status"].to_dict()
+
+view=shipments.copy()
+view["data_quality_status"]=view["shipment_id"].map(qmap).fillna("UNKNOWN")
+for col in ["current_temp_c","min_temp_c","max_temp_c"]:
+ view[col]=pd.to_numeric(view[col],errors="coerce")
+view["temperature_status"]=view.apply(lambda r: "DATA MISSING" if "MISSING" in str(r["data_quality_status"]).upper() else "TOO WARM" if r["current_temp_c"]>r["max_temp_c"] else "TOO COLD" if r["current_temp_c"]<r["min_temp_c"] else "IN RANGE",axis=1)
+view["priority"]=view.apply(lambda r: "HIGH" if r["temperature_status"] in ["TOO WARM","TOO COLD"] else "VERIFY DATA" if r["temperature_status"]=="DATA MISSING" else "NORMAL",axis=1)
+
+m1,m2,m3,m4=st.columns(4)
+with m1:
+ st.markdown(f'<div class="panel"><div class="small-label">📦 TOTAL SHIPMENTS</div><div class="metric">{len(view)}</div><div>Demo records</div></div>',unsafe_allow_html=True)
+with m2:
+ st.markdown(f'<div class="panel"><div class="small-label">🔴 TEMP EXCURSIONS</div><div class="metric" style="color:#dc2626">{int(view["temperature_status"].isin(["TOO WARM","TOO COLD"]).sum())}</div><div>Outside listed range</div></div>',unsafe_allow_html=True)
+with m3:
+ st.markdown(f'<div class="panel"><div class="small-label">🟠 DATA CHECKS</div><div class="metric" style="color:#c2410c">{int((view["temperature_status"]=="DATA MISSING").sum())}</div><div>Missing/uncertain readings</div></div>',unsafe_allow_html=True)
+with m4:
+ st.markdown(f'<div class="panel"><div class="small-label">🧭 NEEDS REVIEW</div><div class="metric">{int((view["priority"]!="NORMAL").sum())}</div><div>Non-normal records</div></div>',unsafe_allow_html=True)
+
+st.markdown('<div class="section">📋 PRIORITY ACTION QUEUE</div>',unsafe_allow_html=True)
+st.caption("Transparent rule-based flags for demo triage; not a validated clinical severity model.")
+priority_order={"HIGH":0,"VERIFY DATA":1,"NORMAL":2}
+queue=view.copy()
+queue["_order"]=queue["priority"].map(priority_order)
+queue=queue.sort_values(["_order","shipment_id"]).drop(columns=["_order"])
+display_cols=["shipment_id","product","current_temp_c","min_temp_c","max_temp_c","temperature_status","data_quality_status","priority"]
+st.dataframe(queue[display_cols],use_container_width=True,hide_index=True)
+st.download_button("⬇️ Download priority action queue (CSV)",data=queue[display_cols].to_csv(index=False).encode("utf-8"),file_name="coldguardian_priority_action_queue.csv",mime="text/csv",use_container_width=True)
+
+st.markdown('<div class="section">🔍 INVESTIGATE A SHIPMENT</div>',unsafe_allow_html=True)
+shipment_id=st.selectbox("Select shipment",shipments["shipment_id"].tolist(),format_func=lambda sid: f"{sid} — {shipments.loc[shipments.shipment_id==sid,'product'].iloc[0]}")
 row=shipments[shipments.shipment_id==shipment_id].iloc[0]
 temp=float(row.current_temp_c); low=float(row.min_temp_c); high=float(row.max_temp_c)
 qstatus=str(qmap.get(shipment_id,"UNKNOWN"))
 missing="MISSING" in qstatus.upper()
 too_high=temp>high; too_low=temp<low
-status=t["unknown"] if missing else t["high"] if too_high else t["low"] if too_low else t["ok"]
-status_icon="🟠" if missing else "🔴" if too_high else "🔵" if too_low else "🟢"
-status_color="#fbbf24" if missing else "#fb7185" if too_high else "#60a5fa" if too_low else "#4ade80"
+status="DATA MISSING" if missing else "TOO WARM" if too_high else "TOO COLD" if too_low else "IN RANGE"
+status_color="#dc2626" if too_high or too_low else "#f97316" if missing else "#15803d"
+left,right=st.columns([1,1.5])
+with left:
+ st.markdown(f'<div class="panel"><div class="small-label">SELECTED SHIPMENT</div><div class="metric">{shipment_id}</div><div>{row["product"]}</div><hr/><div class="small-label">REPORTED TEMPERATURE</div><div class="metric">{temp:.1f}°C</div><div>Allowed range: {low:g}–{high:g}°C</div><hr/><div class="big-alert" style="color:{status_color}">{status}</div><div>Sensor status: {qstatus}</div></div>',unsafe_allow_html=True)
+with right:
+ st.markdown('<div class="panel"><div class="small-label">🛠️ REVIEW CHECKLIST</div><h3>Before any real-world action</h3><p>1. Confirm the sensor reading and timestamp.</p><p>2. Check sensor status and physical shipment temperature using approved procedures.</p><p>3. Notify the responsible cold-chain professional if a reading is out of range or missing.</p><p>4. Document the decision and follow the product-specific protocol.</p><hr/><p><b>Important:</b> this dashboard cannot confirm product safety or authorize transfer.</p></div>',unsafe_allow_html=True)
 
-c1,c2,c3=st.columns(3)
-with c1:
- st.markdown(f'<div class="panel"><div class="small-label">📦 SHIPMENT</div><div class="metric">{shipment_id}</div><div>{row["product"]}</div></div>',unsafe_allow_html=True)
-with c2:
- st.markdown(f'<div class="panel"><div class="small-label">🌡️ {t["temp"]}</div><div class="metric">{temp:.1f}°C</div><div>{t["range"]}: {low:g}–{high:g}°C</div></div>',unsafe_allow_html=True)
-with c3:
- st.markdown(f'<div class="panel"><div class="small-label">🚦 {t["quality"]}</div><div class="big-alert" style="color:{status_color}">{status_icon} {status}</div><div>{qstatus}</div></div>',unsafe_allow_html=True)
-
-st.markdown(f'<div class="section">🧠 {t["round"]}: {t["question"]}</div>',unsafe_allow_html=True)
-st.markdown("**Imagine you are the cold-chain response team. Which move would you choose?**")
-a,b,c=st.columns(3)
-with a:
- choose_verify=st.button(f'{t["verify"]}\n{t["verify_desc"]}',use_container_width=True)
-with b:
- choose_transfer=st.button(f'{t["move"]}\n{t["move_desc"]}',use_container_width=True)
-with c:
- choose_wait=st.button(f'{t["ignore"]}\n{t["ignore_desc"]}',use_container_width=True)
-
-if "rounds" not in st.session_state: st.session_state.rounds=0
-if "points" not in st.session_state: st.session_state.points=0
-if "last_choice" not in st.session_state: st.session_state.last_choice=None
-if choose_verify or choose_transfer or choose_wait:
- choice="verify" if choose_verify else "transfer" if choose_transfer else "wait"
- st.session_state.last_choice=(shipment_id,choice)
- st.session_state.rounds+=1
- # Illustrative game payoff: verify is best when data is missing/conflicting or temperature is out of range.
- best_choice="verify" if (missing or too_high or too_low) else "wait"
- points=100 if choice==best_choice else 35 if choice=="transfer" and (missing or too_high or too_low) else 0
- st.session_state.points+=points
- st.session_state.last_points=points
- st.session_state.last_best=(choice==best_choice)
- st.session_state.last_best_choice=best_choice
- st.session_state.last_reason=("Verification reduces uncertainty before a real action. The system cannot confirm physical conditions from this synthetic record." if best_choice=="verify" else "When the reading is within range and the sensor record is valid, continued monitoring is the lower-disruption choice in this training scenario.")
- st.rerun()
-
-if st.session_state.last_choice and st.session_state.last_choice[0]==shipment_id:
- choice=st.session_state.last_choice[1]
- points=st.session_state.get("last_points",0)
- correct=st.session_state.get("last_best",False)
- st.markdown("---")
- st.markdown(f'<div class="panel" style="border-color:{"#4ade80" if correct else "#fbbf24"};animation:glow 2s infinite"><div class="eyebrow">{t["win"] if correct else t["lost"]}</div><div class="metric">{"+100" if points==100 else "+"+str(points) if points else "+0"} XP</div><div style="font-size:22px;font-weight:900;margin:8px 0">{t["best"] if correct else t["bad"]}</div><div style="font-size:18px">{t["good"] if correct else t["badmsg"]}</div><p>{st.session_state.get("last_reason","")}</p></div>',unsafe_allow_html=True)
- if correct:
-  st.balloons()
- st.markdown(f'<div class="section">⚖️ {t["payoff"]}</div>',unsafe_allow_html=True)
- payoff=pd.DataFrame([
-  {"Move":t["verify"],"Safety":"High","Time":"Medium","Uncertainty":"Low"},
-  {"Move":t["move"],"Safety":"Depends on verification","Time":"Potentially faster","Uncertainty":"Still needs confirmation"},
-  {"Move":t["ignore"],"Safety":"Poor if an alert is real","Time":"No immediate cost","Uncertainty":"Remains high"},
- ])
- st.dataframe(payoff,use_container_width=True,hide_index=True)
- st.markdown(f'**{t["what"]}** {st.session_state.last_reason}')
- st.progress(min(100,st.session_state.points%101)/100 if st.session_state.points%101 else (1.0 if st.session_state.points else 0.0),text=f'{t["score"]}: {st.session_state.points} XP  •  Rounds: {st.session_state.rounds}')
- if st.button(t["next"],use_container_width=True):
-  st.session_state.last_choice=None
-  st.rerun()
+incident=pd.DataFrame([{"shipment_id":shipment_id,"product":str(row["product"]),"reported_temperature_c":temp,"allowed_min_c":low,"allowed_max_c":high,"temperature_status":status,"sensor_data_quality":qstatus,"inventory_units":int(row["inventory_units"]),"demo_note":"Synthetic data; requires qualified human review"}])
+st.download_button("📄 Export selected shipment incident report (CSV)",data=incident.to_csv(index=False).encode("utf-8"),file_name=shipment_id.lower()+"_incident_report.csv",mime="text/csv",use_container_width=True)
 
 st.markdown(f'<div class="section">🏥 {t["fac"]}</div>',unsafe_allow_html=True)
 st.caption(t["facnote"])
