@@ -129,3 +129,8 @@ List other APIs, datasets, models, or libraries only if they are actually used i
 - [ ] Confirm the submission title includes the team name and paste this repository URL into the official portal.
 
 Never include SSH private keys, access tokens, passwords, or server credentials in this repository.
+
+
+## Measured-data research workflow
+
+The main operations dashboard uses synthetic shipment/facility demo records. For transparent analysis of real measured temperature time series, see [DATASET_GUIDE.md](DATASET_GUIDE.md) for a public research dataset, provenance, and CSV normalization steps. The app's separate **Real-data research lab** accepts normalized measured readings and reports exploratory chronological holdout errors for simple baselines. This does not validate product safety or the full logistics workflow.
