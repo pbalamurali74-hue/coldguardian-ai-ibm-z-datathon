@@ -68,7 +68,7 @@ class ColdGuardianTests(unittest.TestCase):
             "timestamp":pd.date_range("2026-01-01", periods=5, freq="5min"),
             "temperature_c":[5.0]*5
         })
-        fc = experimental_linear_forecast(readings, self.shipments)
+        fc = experimental_linear_forecast(readings, self.shipments[["shipment_id", "max_temp_c"]])
         self.assertFalse(fc.empty)
         self.assertTrue(np.allclose(fc["forecast_temperature_c"], 5.0))
 
@@ -78,7 +78,7 @@ class ColdGuardianTests(unittest.TestCase):
             "timestamp":pd.date_range("2026-01-01", periods=3, freq="5min"),
             "temperature_c":[5.0,5.2,5.4]
         })
-        fc = experimental_linear_forecast(short, self.shipments)
+        fc = experimental_linear_forecast(short, self.shipments[["shipment_id", "max_temp_c"]])
         self.assertTrue(fc.empty)
 
 
