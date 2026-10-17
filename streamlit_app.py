@@ -145,4 +145,46 @@ with st.expander("Technical details and decision safeguards"):
     st.write({"shipments": total, "facilities": len(facilities), "sensor_reading_rows": len(readings),
               "quality_report_rows": len(quality), "forecast_rows": len(forecasts)})
 
+
+st.markdown('<div class="section-title">🧾 Review and handoff tracker</div>', unsafe_allow_html=True)
+st.caption("Track review status for this browser session and export a handoff CSV. This is not persistent storage and does not send alerts.")
+if "review_states" not in st.session_state:
+    st.session_state.review_states = {}
+review_rows = []
+for _, qr in queue.iterrows():
+    sid = qr.shipment_id
+    prior = st.session_state.review_states.get(sid, {})
+    a, b, c = st.columns([1, 1, 2])
+    with a:
+        reviewed = st.checkbox(f"{sid}: reviewed", value=bool(prior.get("reviewed", False)), key=f"rev_{sid}")
+    with b:
+        escalated = st.checkbox("Escalated", value=bool(prior.get("escalated", False)), key=f"esc_{sid}")
+    with c:
+        note = st.text_input("Handoff note", value=str(prior.get("note", "")), key=f"note_{sid}")
+    st.session_state.review_states[sid] = {"reviewed": reviewed, "escalated": escalated, "note": note}
+    review_rows.append({"shipment_id":sid, "incident_status":qr.incident_status, "priority_score":qr.priority_score,
+                        "reviewed":reviewed, "escalated":escalated, "note":note,
+                        "data_notice":"Synthetic demo data; human review required"})
+review_df = pd.DataFrame(review_rows)
+st.download_button("⬇️ Export review / handoff checklist", review_df.to_csv(index=False).encode("utf-8"),
+                   "coldguardian_review_handoff.csv", "text/csv", use_container_width=True)
+
+st.markdown('<div class="section-title">🧪 Temperature what-if simulator</div>', unsafe_allow_html=True)
+sim_id = st.selectbox("Select shipment for scenario", shipments.shipment_id.tolist(), key="scenario_shipment")
+simrow = shipments.loc[shipments.shipment_id == sim_id].iloc[0]
+scenario_temp = st.slider("Hypothetical temperature (°C)", -5.0, 25.0, float(simrow.current_temp_c), 0.1)
+scenario_status = classify_temperature(scenario_temp, float(simrow.min_temp_c), float(simrow.max_temp_c))
+st.metric("Scenario status", scenario_status, delta=f"{scenario_temp:.1f} °C")
+st.caption("Scenario-only calculation: it does not edit source data, predict product safety, or authorize a transfer.")
+
+st.markdown('<div class="section-title">🧰 Data-quality workbench</div>', unsafe_allow_html=True)
+with st.expander("Inspect sensor-quality report"):
+    st.dataframe(quality, use_container_width=True, hide_index=True)
+    st.download_button("⬇️ Export sensor quality report", quality.to_csv(index=False).encode("utf-8"),
+                       "coldguardian_sensor_quality.csv", "text/csv")
+with st.expander("Inspect raw sensor readings"):
+    st.dataframe(readings, use_container_width=True, hide_index=True)
+    st.download_button("⬇️ Export raw sensor readings", readings.to_csv(index=False).encode("utf-8"),
+                       "coldguardian_sensor_readings.csv", "text/csv")
+
 st.markdown('<div class="note">Safety notice: synthetic demonstration data only. This prototype supports investigation and documentation; it does not authorize product use, disposal, or transfer.</div>', unsafe_allow_html=True)
