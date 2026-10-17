@@ -225,6 +225,7 @@ research_file = st.file_uploader("Upload measured temperature CSV", type=["csv"]
 if research_file is not None:
     try:
         research = pd.read_csv(research_file)
+        raw_research_count = len(research)
         needed = {"timestamp", "temperature_c"}
         if not needed.issubset(research.columns):
             st.error("Required columns are timestamp and temperature_c. Convert the source CSV using the instructions in DATASET_GUIDE.md.")
@@ -246,7 +247,7 @@ if research_file is not None:
                 "readings": len(series), "first_timestamp": series["timestamp"].min(),
                 "last_timestamp": series["timestamp"].max(), "minimum_c": series["temperature_c"].min(),
                 "maximum_c": series["temperature_c"].max(), "mean_c": series["temperature_c"].mean(),
-                "missing_or_invalid_rows_removed": int(len(pd.read_csv(research_file)) - len(research))
+                "missing_or_invalid_rows_removed": int(raw_research_count - len(research))
             }]), use_container_width=True, hide_index=True)
             if len(series) >= 10:
                 values = series["temperature_c"].to_numpy(dtype=float)
