@@ -68,8 +68,17 @@ st.write("Transparent heuristic ranking combines the existing incident score, se
 display_cols = ["shipment_id","product","reported_temp_c","incident_status","severity_score",
                 "sensor_trust_score","sensor_trust_label","peak_temp_c","max_deviation_c",
                 "observed_out_of_range_minutes","recovery_status","priority_score","priority_reason"]
-st.dataframe(queue[display_cols], use_container_width=True, hide_index=True)
-st.download_button("⬇️ Export priority queue (CSV)", queue.to_csv(index=False).encode("utf-8"),
+filter_left, filter_right = st.columns([1, 1])
+with filter_left:
+    selected_status = st.selectbox("Filter incident status", ["All"] + sorted(queue["incident_status"].astype(str).unique().tolist()))
+with filter_right:
+    minimum_priority = st.slider("Minimum priority score", 0, 100, 0, 5)
+filtered_queue = queue.copy()
+if selected_status != "All":
+    filtered_queue = filtered_queue[filtered_queue["incident_status"].astype(str) == selected_status]
+filtered_queue = filtered_queue[pd.to_numeric(filtered_queue["priority_score"], errors="coerce") >= minimum_priority]
+st.dataframe(filtered_queue[display_cols], use_container_width=True, hide_index=True)
+st.download_button("⬇️ Export filtered priority queue (CSV)", filtered_queue.to_csv(index=False).encode("utf-8"),
                    "coldguardian_priority_queue.csv", "text/csv")
 
 left, right = st.columns([1, 1])
