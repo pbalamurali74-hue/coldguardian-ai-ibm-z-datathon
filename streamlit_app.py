@@ -5,205 +5,218 @@ import streamlit.components.v1 as components
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
+st.set_page_config(page_title="ColdGuardian | Mission Control", page_icon="🧊", layout="wide")
 
-st.set_page_config(page_title="ColdGuardian AI", page_icon="🧊", layout="wide")
-
-TEXT = {
-    "English": {
-        "title": "ColdGuardian AI",
-        "subtitle": "A simple cold-chain safety helper",
-        "demo": "DEMO DATA — NOT LIVE SHIPMENT DATA",
-        "choose": "Choose a shipment",
-        "safe": "Within the set temperature range",
-        "hot": "Temperature is TOO HIGH",
-        "cold": "Temperature is TOO LOW",
-        "unknown": "Temperature information needs checking",
-        "check": "Sensor information is missing or conflicting. Ask a trained person to check it.",
-        "temp": "Current reported temperature",
-        "range": "Allowed temperature range",
-        "next": "What should happen next?",
-        "high_action": "🚨 Check this shipment now. Confirm the sensor and follow your cold-chain procedure.",
-        "ok_action": "✅ Keep monitoring the shipment and check the sensor data.",
-        "facility": "Possible facilities to review",
-        "facility_note": "These are suggestions only. A trained person must confirm before moving anything.",
-        "history": "Temperature over time",
-        "details": "Technical details (for staff)",
-        "speak": "🔊 Read this screen aloud",
-        "speech": "ColdGuardian alert. ",
-        "no_facility": "No facility meets the demo compatibility and capacity rules.",
-        "risk": "Review priority",
-        "critical": "HIGH ATTENTION",
-        "normal": "CHECK ROUTINELY",
-        "verify": "VERIFY DATA",
-    },
-    "தமிழ்": {
-        "title": "குளிர்சங்கிலி பாதுகாப்பு",
-        "subtitle": "மருந்துகளின் வெப்பநிலையை கண்காணிக்க உதவும் எளிய கருவி",
-        "demo": "செயற்கை மாதிரி தரவு — நேரடி தரவு அல்ல",
-        "choose": "சரக்கைத் தேர்ந்தெடுக்கவும்",
-        "safe": "வெப்பநிலை அனுமதிக்கப்பட்ட வரம்பில் உள்ளது",
-        "hot": "வெப்பநிலை மிகவும் அதிகம்",
-        "cold": "வெப்பநிலை மிகவும் குறைவு",
-        "unknown": "வெப்பநிலைத் தகவலை சரிபார்க்க வேண்டும்",
-        "check": "சென்சார் தகவல் இல்லை அல்லது முரண்படுகிறது. பயிற்சி பெற்ற நபரிடம் சரிபார்க்கவும்.",
-        "temp": "தற்போதைய வெப்பநிலை",
-        "range": "அனுமதிக்கப்பட்ட வெப்பநிலை",
-        "next": "அடுத்து என்ன செய்ய வேண்டும்?",
-        "high_action": "🚨 இந்த சரக்கை உடனே சரிபார்க்கவும். சென்சாரை உறுதிசெய்து நடைமுறையைப் பின்பற்றவும்.",
-        "ok_action": "✅ தொடர்ந்து கண்காணித்து சென்சார் தகவலைச் சரிபார்க்கவும்.",
-        "facility": "பரிசீலிக்கக்கூடிய மையங்கள்",
-        "facility_note": "இவை பரிந்துரைகள் மட்டுமே. மாற்றுவதற்கு முன் பயிற்சி பெற்ற நபர் உறுதிப்படுத்த வேண்டும்.",
-        "history": "காலத்தின்படி வெப்பநிலை",
-        "details": "தொழில்நுட்ப விவரங்கள் (பணியாளர்களுக்கு)",
-        "speak": "🔊 இந்தத் திரையைச் சத்தமாக வாசிக்கவும்",
-        "speech": "குளிர்சங்கிலி எச்சரிக்கை. ",
-        "no_facility": "இந்த மாதிரி விதிகளுக்கு ஏற்ற மையம் இல்லை.",
-        "risk": "கவன முன்னுரிமை",
-        "critical": "அதிக கவனம் தேவை",
-        "normal": "வழக்கமான சரிபார்ப்பு",
-        "verify": "தரவை சரிபார்க்கவும்",
-    },
-    "తెలుగు": {
-        "title": "కోల్డ్ చైన్ భద్రత",
-        "subtitle": "మందుల ఉష్ణోగ్రతను పర్యవేక్షించడానికి సులభమైన సహాయకం",
-        "demo": "నమూనా డేటా మాత్రమే — ప్రత్యక్ష డేటా కాదు",
-        "choose": "షిప్‌మెంట్‌ను ఎంచుకోండి",
-        "safe": "ఉష్ణోగ్రత అనుమతించిన పరిధిలో ఉంది",
-        "hot": "ఉష్ణోగ్రత చాలా ఎక్కువగా ఉంది",
-        "cold": "ఉష్ణోగ్రత చాలా తక్కువగా ఉంది",
-        "unknown": "ఉష్ణోగ్రత వివరాలను తనిఖీ చేయాలి",
-        "check": "సెన్సార్ సమాచారం లేదు లేదా సరిపోలడం లేదు. శిక్షణ పొందిన వ్యక్తితో తనిఖీ చేయించండి.",
-        "temp": "ప్రస్తుతం నమోదైన ఉష్ణోగ్రత",
-        "range": "అనుమతించిన ఉష్ణోగ్రత పరిధి",
-        "next": "తర్వాత ఏమి చేయాలి?",
-        "high_action": "🚨 ఈ షిప్‌మెంట్‌ను వెంటనే తనిఖీ చేయండి. సెన్సార్‌ను నిర్ధారించి విధానాన్ని అనుసరించండి.",
-        "ok_action": "✅ పర్యవేక్షణ కొనసాగించి సెన్సార్ డేటాను తనిఖీ చేయండి.",
-        "facility": "పరిశీలించాల్సిన కేంద్రాలు",
-        "facility_note": "ఇవి సూచనలు మాత్రమే. తరలించే ముందు శిక్షణ పొందిన వ్యక్తి నిర్ధారించాలి.",
-        "history": "కాలక్రమంలో ఉష్ణోగ్రత",
-        "details": "సాంకేతిక వివరాలు (సిబ్బందికి)",
-        "speak": "🔊 ఈ స్క్రీన్‌ను చదివి వినిపించండి",
-        "speech": "కోల్డ్ చైన్ హెచ్చరిక. ",
-        "no_facility": "నమూనా నియమాలకు సరిపోయే కేంద్రం లేదు.",
-        "risk": "శ్రద్ధ ప్రాధాన్యత",
-        "critical": "అత్యధిక శ్రద్ధ అవసరం",
-        "normal": "సాధారణ తనిఖీ",
-        "verify": "డేటాను తనిఖీ చేయండి",
-    },
+COPY = {
+ "English": {
+  "title":"COLDGUARDIAN", "subtitle":"Save the cold chain. Make the smart move.",
+  "demo":"TRAINING SIMULATION • SYNTHETIC DATA • NOT A LIVE MEDICAL SYSTEM",
+  "mission":"YOUR MISSION", "choose":"Choose a shipment to investigate",
+  "temp":"Reported temperature", "range":"Allowed range", "quality":"Sensor signal",
+  "high":"TOO WARM", "low":"TOO COLD", "ok":"IN RANGE", "unknown":"DATA MISSING",
+  "round":"DECISION ROUND", "question":"What is your next move?",
+  "verify":"🔎 VERIFY FIRST", "move":"🚑 PREPARE SAFE TRANSFER", "ignore":"⏳ KEEP WAITING",
+  "verify_desc":"Check sensor + confirm the real shipment condition",
+  "move_desc":"Request a trained person to assess a suitable facility",
+  "ignore_desc":"Take no action yet",
+  "score":"MISSION SCORE", "best":"SMART MOVE!", "bad":"RISKY MOVE",
+  "good":"You reduced uncertainty before acting. That is a strong decision under incomplete information.",
+  "badmsg":"This choice can increase risk. In real operations, follow the approved cold-chain procedure and escalate to trained staff.",
+  "fac":"FACILITY OPTIONS", "facnote":"Only candidates matching storage compatibility and capacity are shown. Confirm with staff before moving products.",
+  "history":"TEMPERATURE STORY", "staff":"Staff view: technical details", "speak":"🔊 Read the alert aloud",
+  "read":"Alert. Shipment", "none":"No facility meets this simulation's rules.",
+  "next":"Play another round", "win":"ROUND CLEARED", "lost":"LESSON UNLOCKED",
+  "foot":"Game-theory learning demo: actions have different trade-offs in safety, time, and uncertainty. Scores are illustrative—not clinical or operational recommendations.",
+  "what":"WHY THIS MOVE?", "payoff":"SIMULATED TRADE-OFFS", "safety":"Safety", "time":"Time", "uncertainty":"Uncertainty",
+  "rule":"Rule: when information is missing or conflicting, verify before making a real-world transfer decision."
+ },
+ "தமிழ்": {
+  "title":"குளிர்காப்பு", "subtitle":"மருந்துகளை பாதுகாப்போம். சரியான முடிவைத் தேர்வுசெய்வோம்.",
+  "demo":"பயிற்சி மாதிரி • செயற்கை தரவு • நேரடி மருத்துவ அமைப்பு அல்ல",
+  "mission":"உங்கள் பணி", "choose":"சரக்கைத் தேர்ந்தெடுக்கவும்",
+  "temp":"பதிவான வெப்பநிலை", "range":"அனுமதிக்கப்பட்ட வரம்பு", "quality":"சென்சார் தகவல்",
+  "high":"மிகவும் சூடு", "low":"மிகவும் குளிர்", "ok":"வரம்புக்குள்", "unknown":"தரவு இல்லை",
+  "round":"முடிவு சுற்று", "question":"அடுத்ததாக என்ன செய்வீர்கள்?",
+  "verify":"🔎 முதலில் சரிபார்க்கவும்", "move":"🚑 பாதுகாப்பான மாற்றத்தைத் தயாரிக்கவும்", "ignore":"⏳ காத்திருக்கவும்",
+  "verify_desc":"சென்சாரையும் சரக்கின் உண்மை நிலையும் சரிபார்க்கவும்",
+  "move_desc":"பொருத்தமான மையத்தைப் பற்றி பயிற்சி பெற்ற நபரிடம் ஆலோசிக்கவும்",
+  "ignore_desc":"இப்போது நடவடிக்கை எடுக்க வேண்டாம்",
+  "score":"பணி மதிப்பெண்", "best":"சிறந்த முடிவு!", "bad":"ஆபத்தான முடிவு",
+  "good":"நடவடிக்கை எடுக்கும் முன் தகவலைச் சரிபார்த்தீர்கள். இது நல்ல முடிவு.",
+  "badmsg":"இந்தத் தேர்வு ஆபத்தை அதிகரிக்கலாம். உண்மையான செயல்பாட்டில் அங்கீகரிக்கப்பட்ட நடைமுறையைப் பின்பற்றவும்.",
+  "fac":"மையத் தேர்வுகள்", "facnote":"சேமிப்பு மற்றும் கொள்ளளவு பொருந்தும் மையங்கள் மட்டுமே காட்டப்படும். மாற்றுவதற்கு முன் பணியாளரிடம் உறுதிப்படுத்தவும்.",
+  "history":"வெப்பநிலை வரலாறு", "staff":"பணியாளர்களுக்கான தொழில்நுட்ப விவரங்கள்", "speak":"🔊 எச்சரிக்கையை வாசிக்கவும்",
+  "read":"எச்சரிக்கை. சரக்கு", "none":"இந்த மாதிரி விதிகளுக்கு ஏற்ற மையம் இல்லை.",
+  "next":"மற்றொரு சுற்று விளையாடுங்கள்", "win":"சுற்று வெற்றி", "lost":"பாடம் கற்றீர்கள்",
+  "foot":"இது விளையாட்டு அடிப்படையிலான பயிற்சி. மதிப்பெண்கள் விளக்கத்திற்காக மட்டுமே; மருத்துவ முடிவுகளுக்கான பரிந்துரை அல்ல.",
+  "what":"இந்த முடிவு ஏன்?", "payoff":"மாதிரி சமநிலைகள்", "safety":"பாதுகாப்பு", "time":"நேரம்", "uncertainty":"தெளிவின்மை",
+  "rule":"தரவு இல்லை அல்லது முரண்பட்டால், உண்மையான மாற்ற முடிவுக்கு முன் சரிபார்க்கவும்."
+ },
+ "తెలుగు": {
+  "title":"కోల్డ్ గార్డియన్", "subtitle":"కోల్డ్ చైన్‌ను కాపాడండి. తెలివైన నిర్ణయం తీసుకోండి.",
+  "demo":"శిక్షణ సిమ్యులేషన్ • నమూనా డేటా • ప్రత్యక్ష వైద్య వ్యవస్థ కాదు",
+  "mission":"మీ లక్ష్యం", "choose":"షిప్‌మెంట్ ఎంచుకోండి",
+  "temp":"నమోదైన ఉష్ణోగ్రత", "range":"అనుమతించిన పరిధి", "quality":"సెన్సార్ సమాచారం",
+  "high":"చాలా వేడి", "low":"చాలా చల్లగా", "ok":"పరిధిలో ఉంది", "unknown":"డేటా లేదు",
+  "round":"నిర్ణయ రౌండ్", "question":"తర్వాత మీరు ఏం చేస్తారు?",
+  "verify":"🔎 ముందుగా తనిఖీ", "move":"🚑 సురక్షిత బదిలీ సిద్ధం", "ignore":"⏳ వేచి ఉండండి",
+  "verify_desc":"సెన్సార్‌ను, సరుకు నిజ స్థితిని తనిఖీ చేయండి",
+  "move_desc":"తగిన కేంద్రం గురించి శిక్షణ పొందిన వ్యక్తిని అడగండి",
+  "ignore_desc":"ఇప్పుడే చర్య తీసుకోకండి",
+  "score":"మిషన్ స్కోర్", "best":"మంచి నిర్ణయం!", "bad":"ప్రమాదకర నిర్ణయం",
+  "good":"చర్యకు ముందు సమాచారాన్ని తనిఖీ చేశారు. ఇది మంచి నిర్ణయం.",
+  "badmsg":"ఈ ఎంపిక ప్రమాదాన్ని పెంచవచ్చు. నిజ జీవితంలో ఆమోదించిన విధానాన్ని అనుసరించండి.",
+  "fac":"కేంద్ర ఎంపికలు", "facnote":"నిల్వ మరియు సామర్థ్యం సరిపోయే కేంద్రాలే చూపబడతాయి. బదిలీకి ముందు సిబ్బందితో నిర్ధారించండి.",
+  "history":"ఉష్ణోగ్రత చరిత్ర", "staff":"సిబ్బంది సాంకేతిక వివరాలు", "speak":"🔊 హెచ్చరికను చదివి వినిపించండి",
+  "read":"హెచ్చరిక. షిప్‌మెంట్", "none":"నమూనా నియమాలకు సరిపోయే కేంద్రం లేదు.",
+  "next":"మరో రౌండ్ ఆడండి", "win":"రౌండ్ పూర్తి", "lost":"పాఠం నేర్చుకున్నారు",
+  "foot":"ఇది ఆట ఆధారిత శిక్షణ నమూనా. స్కోర్లు వివరణ కోసం మాత్రమే; వైద్య సూచనలు కావు.",
+  "what":"ఈ నిర్ణయం ఎందుకు?", "payoff":"నమూనా ప్రభావాలు", "safety":"భద్రత", "time":"సమయం", "uncertainty":"అనిశ్చితి",
+  "rule":"డేటా లేనప్పుడు లేదా విరుద్ధంగా ఉన్నప్పుడు, నిజమైన బదిలీ నిర్ణయానికి ముందు తనిఖీ చేయాలి."
+ }
 }
+lang=st.selectbox("Language / மொழி / భాష", ["English","தமிழ்","తెలుగు"], key="language")
+t=COPY[lang]
 
-lang = st.selectbox("Language / மொழி / భాష", list(TEXT.keys()), index=0)
-t = TEXT[lang]
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+html,body,[class*="css"]{font-family:'Nunito',sans-serif}
+.stApp{background:radial-gradient(ellipse at 20% 0%,#153b5b 0%,#071421 42%,#08101b 100%);color:#f4f8ff}
+.block-container{max-width:1250px;padding-top:1.3rem}
+h1,h2,h3,p,label,div{color:inherit}
+.hero{padding:26px 28px;border:1px solid #2b5674;border-radius:24px;background:linear-gradient(120deg,rgba(14,116,144,.42),rgba(30,41,59,.8));box-shadow:0 15px 50px #0005;animation:enter .8s ease-out}
+.eyebrow{letter-spacing:3px;color:#67e8f9;font-weight:900;font-size:12px}
+.hero-title{font-size:clamp(30px,5vw,52px);font-weight:900;line-height:1.05;margin:8px 0}
+.hero-sub{font-size:clamp(16px,2vw,22px);color:#cce7f4}
+.demo-pill{display:inline-block;background:#492b1b;color:#ffd6a5;border:1px solid #a75a2c;border-radius:999px;padding:8px 14px;font-weight:900;font-size:12px;margin-top:14px}
+.panel{border:1px solid #26475d;border-radius:20px;padding:20px;background:linear-gradient(145deg,#102438,#0d1b2a);box-shadow:0 12px 32px #0003;animation:enter .65s ease-out both}
+.metric{font-size:clamp(27px,4vw,43px);font-weight:900;line-height:1.15}
+.small-label{font-size:12px;color:#a8c4d5;text-transform:uppercase;letter-spacing:1.5px;font-weight:800}
+.big-alert{font-size:clamp(25px,3vw,38px);font-weight:900;animation:pulse 1.7s infinite}
+.section{font-size:24px;font-weight:900;margin:16px 0 10px}
+div.stButton>button{width:100%;border-radius:16px;min-height:70px;font-size:17px;font-weight:900;border:1px solid #39718c;background:linear-gradient(120deg,#123c55,#164e63);color:#f2fbff;transition:transform .18s ease,box-shadow .18s ease}
+div.stButton>button:hover{transform:translateY(-3px) scale(1.01);box-shadow:0 10px 25px #22d3ee33;border-color:#67e8f9;color:#fff}
+@keyframes enter{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{text-shadow:0 0 0 #fb7185}50%{text-shadow:0 0 22px #fb718577}}
+@keyframes glow{0%,100%{box-shadow:0 0 12px #22d3ee22}50%{box-shadow:0 0 28px #22d3ee66}}
+</style>
+""", unsafe_allow_html=True)
 
-shipments = pd.read_csv(DATA / "shipments.csv")
-facilities = pd.read_csv(DATA / "facilities.csv")
-readings = pd.read_csv(DATA / "sensor_readings.csv")
-quality = pd.read_csv(DATA / "sensor_quality_report.csv")
-qmap = quality.set_index("shipment_id")["data_quality_status"].to_dict()
+st.markdown(f"""
+<div class="hero">
+ <div class="eyebrow">DATASET DISTRACTORS · IBM Z DATATHON 2026</div>
+ <div class="hero-title">🧊 {t['title']}</div>
+ <div class="hero-sub">{t['subtitle']}</div>
+ <div class="demo-pill">⚠️ {t['demo']}</div>
+</div>
+""",unsafe_allow_html=True)
 
-st.title("🧊 " + t["title"])
-st.subheader(t["subtitle"])
-st.error("⚠️ " + t["demo"])
+shipments=pd.read_csv(DATA/"shipments.csv")
+facilities=pd.read_csv(DATA/"facilities.csv")
+readings=pd.read_csv(DATA/"sensor_readings.csv")
+quality=pd.read_csv(DATA/"sensor_quality_report.csv")
+qmap=quality.set_index("shipment_id")["data_quality_status"].to_dict()
 
-options = shipments["shipment_id"].tolist()
-selected = st.selectbox(t["choose"], options, format_func=lambda sid: f"📦 {sid}")
-row = shipments.loc[shipments["shipment_id"] == selected].iloc[0]
-temp = float(row["current_temp_c"])
-low, high = float(row["min_temp_c"]), float(row["max_temp_c"])
-quality_status = str(qmap.get(selected, "UNKNOWN"))
-missing = "MISSING" in quality_status.upper()
-too_high, too_low = temp > high, temp < low
+st.markdown(f'<div class="section">🎮 {t["mission"]}</div>',unsafe_allow_html=True)
+st.caption("PLAY A ROUND: learn how safety, time and missing information affect a decision.")
+shipment_id=st.selectbox(t["choose"],shipments["shipment_id"].tolist(),format_func=lambda sid: f"📦 {sid} — {shipments.loc[shipments.shipment_id==sid,'product'].iloc[0]}")
+row=shipments[shipments.shipment_id==shipment_id].iloc[0]
+temp=float(row.current_temp_c); low=float(row.min_temp_c); high=float(row.max_temp_c)
+qstatus=str(qmap.get(shipment_id,"UNKNOWN"))
+missing="MISSING" in qstatus.upper()
+too_high=temp>high; too_low=temp<low
+status=t["unknown"] if missing else t["high"] if too_high else t["low"] if too_low else t["ok"]
+status_icon="🟠" if missing else "🔴" if too_high else "🔵" if too_low else "🟢"
+status_color="#fbbf24" if missing else "#fb7185" if too_high else "#60a5fa" if too_low else "#4ade80"
 
-if missing:
-    headline = "🟠 " + t["unknown"]
-    action = t["check"]
-    color = "#8A4B00"
-elif too_high:
-    headline = "🔴 " + t["hot"]
-    action = t["high_action"]
-    color = "#B42318"
-elif too_low:
-    headline = "🔵 " + t["cold"]
-    action = t["high_action"]
-    color = "#175CD3"
-else:
-    headline = "🟢 " + t["safe"]
-    action = t["ok_action"]
-    color = "#067647"
+c1,c2,c3=st.columns(3)
+with c1:
+ st.markdown(f'<div class="panel"><div class="small-label">📦 SHIPMENT</div><div class="metric">{shipment_id}</div><div>{row["product"]}</div></div>',unsafe_allow_html=True)
+with c2:
+ st.markdown(f'<div class="panel"><div class="small-label">🌡️ {t["temp"]}</div><div class="metric">{temp:.1f}°C</div><div>{t["range"]}: {low:g}–{high:g}°C</div></div>',unsafe_allow_html=True)
+with c3:
+ st.markdown(f'<div class="panel"><div class="small-label">🚦 {t["quality"]}</div><div class="big-alert" style="color:{status_color}">{status_icon} {status}</div><div>{qstatus}</div></div>',unsafe_allow_html=True)
 
-st.markdown(
-    f'<div style="border:4px solid {color}; border-radius:20px; padding:24px; margin:12px 0;">'
-    f'<div style="font-size:clamp(24px,4vw,42px);font-weight:800;color:{color};">{headline}</div>'
-    f'<div style="font-size:clamp(20px,3vw,30px);margin-top:14px;">🌡️ {temp:.1f} °C</div>'
-    f'<div style="font-size:20px;margin-top:8px;">{t["range"]}: {low:.1f}–{high:.1f} °C</div>'
-    '</div>',
-    unsafe_allow_html=True,
-)
-st.markdown(f"## {t['next']}")
-st.markdown(f'<div style="font-size:clamp(20px,3vw,30px);font-weight:700;padding:12px 0;">{action}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="section">🧠 {t["round"]}: {t["question"]}</div>',unsafe_allow_html=True)
+st.markdown("**Imagine you are the cold-chain response team. Which move would you choose?**")
+a,b,c=st.columns(3)
+with a:
+ choose_verify=st.button(f'{t["verify"]}\n{t["verify_desc"]}',use_container_width=True)
+with b:
+ choose_transfer=st.button(f'{t["move"]}\n{t["move_desc"]}',use_container_width=True)
+with c:
+ choose_wait=st.button(f'{t["ignore"]}\n{t["ignore_desc"]}',use_container_width=True)
 
-speech = f'{t["speech"]}{headline}. {t["temp"]}: {temp:.1f} degrees Celsius. {t["range"]}: {low} to {high} degrees Celsius. {action}'
-speech_lang = {"English": "en-IN", "தமிழ்": "ta-IN", "తెలుగు": "te-IN"}[lang]
-if st.button(t["speak"], use_container_width=True):
-    safe_text = speech.replace("\\", " ").replace("'", "\\'").replace("\n", " ")
-    components.html(
-        f"""<script>
-        const utterance = new SpeechSynthesisUtterance('{safe_text}');
-        utterance.lang = '{speech_lang}';
-        utterance.rate = 0.85;
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(utterance);
-        </script>""",
-        height=0,
-    )
+if "rounds" not in st.session_state: st.session_state.rounds=0
+if "points" not in st.session_state: st.session_state.points=0
+if "last_choice" not in st.session_state: st.session_state.last_choice=None
+if choose_verify or choose_transfer or choose_wait:
+ choice="verify" if choose_verify else "transfer" if choose_transfer else "wait"
+ st.session_state.last_choice=(shipment_id,choice)
+ st.session_state.rounds+=1
+ # Illustrative game payoff: verify is best when data is missing/conflicting or temperature is out of range.
+ best_choice="verify" if (missing or too_high or too_low) else "wait"
+ points=100 if choice==best_choice else 35 if choice=="transfer" and (missing or too_high or too_low) else 0
+ st.session_state.points+=points
+ st.session_state.last_points=points
+ st.session_state.last_best=(choice==best_choice)
+ st.session_state.last_best_choice=best_choice
+ st.session_state.last_reason=("Verification reduces uncertainty before a real action. The system cannot confirm physical conditions from this synthetic record." if best_choice=="verify" else "When the reading is within range and the sensor record is valid, continued monitoring is the lower-disruption choice in this training scenario.")
+ st.rerun()
 
-st.markdown(f"## 📍 {t['facility']}")
-st.caption(t["facility_note"])
-eligible = facilities[
-    facilities["compatible_storage"].astype(str).str.lower().isin(["true", "1", "yes"])
-    & (pd.to_numeric(facilities["spare_capacity_units"], errors="coerce") >= float(row["inventory_units"]))
+if st.session_state.last_choice and st.session_state.last_choice[0]==shipment_id:
+ choice=st.session_state.last_choice[1]
+ points=st.session_state.get("last_points",0)
+ correct=st.session_state.get("last_best",False)
+ st.markdown("---")
+ st.markdown(f'<div class="panel" style="border-color:{"#4ade80" if correct else "#fbbf24"};animation:glow 2s infinite"><div class="eyebrow">{t["win"] if correct else t["lost"]}</div><div class="metric">{"+100" if points==100 else "+"+str(points) if points else "+0"} XP</div><div style="font-size:22px;font-weight:900;margin:8px 0">{t["best"] if correct else t["bad"]}</div><div style="font-size:18px">{t["good"] if correct else t["badmsg"]}</div><p>{st.session_state.get("last_reason","")}</p></div>',unsafe_allow_html=True)
+ if correct:
+  st.balloons()
+ st.markdown(f'<div class="section">⚖️ {t["payoff"]}</div>',unsafe_allow_html=True)
+ payoff=pd.DataFrame([
+  {"Move":t["verify"],"Safety":"High","Time":"Medium","Uncertainty":"Low"},
+  {"Move":t["move"],"Safety":"Depends on verification","Time":"Potentially faster","Uncertainty":"Still needs confirmation"},
+  {"Move":t["ignore"],"Safety":"Poor if an alert is real","Time":"No immediate cost","Uncertainty":"Remains high"},
+ ])
+ st.dataframe(payoff,use_container_width=True,hide_index=True)
+ st.markdown(f'**{t["what"]}** {st.session_state.last_reason}')
+ st.progress(min(100,st.session_state.points%101)/100 if st.session_state.points%101 else (1.0 if st.session_state.points else 0.0),text=f'{t["score"]}: {st.session_state.points} XP  •  Rounds: {st.session_state.rounds}')
+ if st.button(t["next"],use_container_width=True):
+  st.session_state.last_choice=None
+  st.rerun()
+
+st.markdown(f'<div class="section">🏥 {t["fac"]}</div>',unsafe_allow_html=True)
+st.caption(t["facnote"])
+eligible=facilities[
+ facilities["compatible_storage"].astype(str).str.lower().isin(["true","1","yes"])
+ & (pd.to_numeric(facilities["spare_capacity_units"],errors="coerce")>=float(row["inventory_units"]))
 ].copy()
-eligible["travel_time_min"] = pd.to_numeric(eligible["travel_time_min"], errors="coerce")
-eligible = eligible.sort_values("travel_time_min")
+eligible["travel_time_min"]=pd.to_numeric(eligible["travel_time_min"],errors="coerce")
+eligible=eligible.sort_values("travel_time_min")
 if eligible.empty:
-    st.warning(t["no_facility"])
+ st.warning(t["none"])
 else:
-    for _, f in eligible.iterrows():
-        st.markdown(
-            f'<div style="border:2px solid #D0D5DD;border-radius:14px;padding:16px;margin:8px 0;">'
-            f'<div style="font-size:22px;font-weight:700;">🏥 {f["name"]}</div>'
-            f'<div style="font-size:18px;">🚗 {int(f["travel_time_min"])} min &nbsp; | &nbsp; '
-            f'📦 {int(f["spare_capacity_units"])} places available</div></div>',
-            unsafe_allow_html=True,
-        )
+ cols=st.columns(min(3,len(eligible)))
+ for i,(_,f) in enumerate(eligible.iterrows()):
+  with cols[i%len(cols)]:
+   st.markdown(f'<div class="panel"><div style="font-size:23px">🏥 {f["name"]}</div><div class="metric">{int(f["travel_time_min"])} min</div><div>{int(f["spare_capacity_units"])} unit capacity</div><div class="small-label">candidate • confirm with staff</div></div>',unsafe_allow_html=True)
 
-hist = readings[readings["shipment_id"] == selected].copy()
-hist["timestamp"] = pd.to_datetime(hist["timestamp"], errors="coerce")
-hist["temperature_c"] = pd.to_numeric(hist["temperature_c"], errors="coerce")
-hist = hist.dropna(subset=["timestamp", "temperature_c"]).sort_values("timestamp")
+hist=readings[readings.shipment_id==shipment_id].copy()
+hist["timestamp"]=pd.to_datetime(hist["timestamp"],errors="coerce")
+hist["temperature_c"]=pd.to_numeric(hist["temperature_c"],errors="coerce")
+hist=hist.dropna(subset=["timestamp","temperature_c"]).sort_values("timestamp")
 if not hist.empty:
-    st.markdown(f"## 📈 {t['history']}")
-    st.line_chart(hist.set_index("timestamp")[["temperature_c"]], y_label="°C")
-    st.caption("Demo history is synthetic. A forecast is an experimental estimate, not a guarantee.")
-
-with st.expander(t["details"]):
-    st.write({
-        "shipment_id": selected,
-        "product": row["product"],
-        "reported_temperature_c": temp,
-        "min_temp_c": low,
-        "max_temp_c": high,
-        "inventory_units": int(row["inventory_units"]),
-        "data_quality_status": quality_status,
-        "priority_from_demo_data": row["priority"],
-    })
-    st.dataframe(eligible, use_container_width=True)
-
-st.download_button(
-    "⬇️ Download incident data (CSV)",
-    data=shipments.to_csv(index=False).encode("utf-8"),
-    file_name="coldguardian_demo_shipments.csv",
-    mime="text/csv",
-    use_container_width=True,
-)
-st.caption("Decision support only. Do not move or discard medicines based only on this demo. A trained cold-chain professional must verify all actions.")
+ st.markdown(f'<div class="section">📈 {t["history"]}</div>',unsafe_allow_html=True)
+ st.line_chart(hist.set_index("timestamp")[["temperature_c"]],y_label="°C")
+ st.caption("All plotted readings in this prototype are synthetic.")
+with st.expander(t["staff"]):
+ st.dataframe(pd.DataFrame([row]),use_container_width=True)
+ st.write({"data_quality_status":qstatus,"inventory_units":int(row["inventory_units"]),"min_temp_c":low,"max_temp_c":high})
+ st.dataframe(eligible,use_container_width=True)
+if st.button(t["speak"],use_container_width=True):
+ speech=f'{t["read"]} {shipment_id}. {status}. {t["temp"]} {temp} degrees Celsius. {t["range"]} {low} to {high} degrees Celsius.'
+ # Use built-in browser speech synthesis. Text is derived from local demo data and fixed UI labels.
+ components.html(f"""<script>const u=new SpeechSynthesisUtterance({speech!r});u.lang={{"English":"en-IN","தமிழ்":"ta-IN","తెలుగు":"te-IN"}}[{lang!r}];u.rate=0.86;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);</script>""",height=0)
+st.download_button("⬇️ Download demo shipment CSV",data=shipments.to_csv(index=False).encode("utf-8"),file_name="coldguardian_demo_shipments.csv",mime="text/csv",use_container_width=True)
+st.markdown(f'<div class="panel" style="margin-top:24px"><div style="font-size:17px;font-weight:800">🛡️ {t["rule"]}</div><p>{t["foot"]}</p></div>',unsafe_allow_html=True)
