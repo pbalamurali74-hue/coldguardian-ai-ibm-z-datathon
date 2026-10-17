@@ -86,7 +86,7 @@ class ColdGuardianTests(unittest.TestCase):
         metrics = compute_excursion_metrics(self.shipments, self.readings)
         s1 = metrics.loc[metrics.shipment_id == "S1"].iloc[0]
         self.assertAlmostEqual(s1["peak_temp_c"], 6.5)
-        self.assertEqual(s1["recovery_status"], "IN RANGE AT LAST READING")
+        self.assertEqual(s1["recovery_status"], "NO OBSERVED EXCURSION")
 
     def test_priority_queue_contains_explainable_score(self):
         queue = build_priority_queue(self.shipments, self.readings, self.quality)
