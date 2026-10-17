@@ -18,7 +18,9 @@ ColdGuardian AI is a notebook-based decision-support prototype that:
 - Reads shipment, facility, sensor-reading, and sensor-quality CSV files.
 - Flags reported temperatures outside configured product limits.
 - Routes missing or conflicting sensor records to verification.
-- Provides a transparent, rule-based severity heuristic.
+- Provides a transparent, rule-based severity heuristic and a separately explainable priority queue.
+- Calculates an explainable 0–100 sensor-trust heuristic using missing/invalid readings, duplicate timestamps, abrupt jumps, stuck values, quality flags, and conflicts with the latest reading.
+- Summarizes peak/minimum temperature, maximum observed deviation, estimated out-of-range span between nearby readings, and last-reading recovery status.
 - Filters rescue candidates by storage compatibility and sufficient capacity, then ranks eligible facilities by supplied travel time.
 - Visualizes temperature histories and provides an experimental linear trend forecast where enough readings exist.
 - Exports incident, rescue, forecast, and testing reports.
@@ -33,7 +35,7 @@ This demonstrates the workflow running on LinuxONE. No architecture-specific per
 
 ## Current demo data
 
-The demonstration data is synthetic and contains 3 shipments, 3 facilities, and 12 sensor readings.
+The demonstration data is synthetic and contains 3 shipments, 3 facilities, and 12 sensor readings. The analytics are deliberately designed to expose data gaps and uncertainty rather than hide them.
 
 - **SH001:** reported temperature 10.2°C against a configured range of 2–8°C; excursion review is required.
 - **SH002:** the quality report indicates a missing reading; verify and reconcile sensor/shipment data.
@@ -53,7 +55,9 @@ These tests cover only the implemented checks and do not establish clinical, reg
 ## Important limitations
 
 - The dataset is synthetic, not live telemetry.
-- Severity scoring is a rule-based heuristic, not a trained machine-learning model.
+- Severity and priority scoring are transparent rule-based heuristics, not trained machine-learning models or calibrated probabilities.
+- Sensor Trust Score is an explainable heuristic, not a validated sensor-reliability probability.
+- Excursion duration is estimated only across adjacent valid readings no more than 15 minutes apart; it is not continuous exposure measurement.
 - Forecasting uses experimental linear extrapolation and has not been evaluated on representative held-out data.
 - No live sensor, GPS, mapping, or logistics integration is connected.
 - Recommendations are for human-reviewed decision support only; they are not autonomous transfer or product-disposition instructions.
@@ -61,7 +65,15 @@ These tests cover only the implemented checks and do not establish clinical, reg
 
 ## Accessible Streamlit prototype
 
-`streamlit_app.py` provides an animated, game-inspired mission interface: users choose a shipment, make a decision, receive illustrative feedback/XP, compare safety-time-uncertainty trade-offs, view candidate facilities, and hear alerts in English/Tamil/Telugu. CSS animations, large visual status cards, and celebratory feedback are included. It uses synthetic demo CSVs and is decision support only. It uses synthetic demo CSVs and is decision support only.
+`streamlit_app.py` provides a quiz-free operations dashboard with:
+- Shipment, excursion, data-quality, and low-trust KPIs.
+- A sortable priority queue with visible reasons and CSV export.
+- Shipment investigation, sensor-trust reasons, and incident-report export.
+- A temperature-history plot with the configured safe band and upper/lower limits.
+- Observed excursion summaries, an experimental linear trend baseline, and facility eligibility details.
+- White/cream styling with orange and red accents.
+
+It uses synthetic demo CSVs and is decision support only. It has not been independently tested in a live browser after the latest UI changes. The IBM LinuxONE `s390x` environment previously could not build a compatible PyArrow dependency for Streamlit; for a public browser demo, deploy through Streamlit Community Cloud and select `streamlit_app.py`. The account owner must sign in and authorize deployment. The Jupyter notebook remains the LinuxONE demo path.
 
 Launch in an environment where Streamlit dependencies install successfully:
 
@@ -69,8 +81,6 @@ Launch in an environment where Streamlit dependencies install successfully:
 python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
-
-The IBM LinuxONE `s390x` environment previously could not build a compatible PyArrow dependency for Streamlit. For a public browser demo, deploy this repository through Streamlit Community Cloud and select `streamlit_app.py` as the app file. The account owner must sign in and authorize deployment. The Jupyter notebook remains the LinuxONE demo path.
 
 ## Project files
 
