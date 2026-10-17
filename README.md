@@ -61,7 +61,7 @@ These tests cover only the implemented checks and do not establish clinical, reg
 
 ## Accessible Streamlit prototype
 
-`streamlit_app.py` provides a visual-first interface with large status messages, icons, simple next-step guidance, English/Tamil/Telugu labels, and browser text-to-speech. It uses synthetic demo CSVs and is decision support only.
+`streamlit_app.py` provides an animated, game-inspired mission interface: users choose a shipment, make a decision, receive illustrative feedback/XP, compare safety-time-uncertainty trade-offs, view candidate facilities, and hear alerts in English/Tamil/Telugu. CSS animations, large visual status cards, and celebratory feedback are included. It uses synthetic demo CSVs and is decision support only. It uses synthetic demo CSVs and is decision support only.
 
 Launch in an environment where Streamlit dependencies install successfully:
 
