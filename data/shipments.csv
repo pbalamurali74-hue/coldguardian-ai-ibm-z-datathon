@@ -1,0 +1,4 @@
+shipment_id,product,min_temp_c,max_temp_c,current_temp_c,inventory_units,priority
+SH001,Vaccine-A,2,8,10.2,240,High
+SH002,Medicine-B,2,8,6.5,120,Medium
+SH003,Vaccine-A,2,8,8.7,180,High
