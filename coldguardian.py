@@ -196,3 +196,120 @@ def run_demo(data_dir="data", output_dir="."):
     rescue.to_csv(out / "coldguardian_rescue_plan.csv", index=False)
     forecast.to_csv(out / "coldguardian_experimental_forecast.csv", index=False)
     return incidents, rescue, forecast
+
+
+def analyze_sensor_trust(shipments, readings, quality):
+    """Return an explainable 0–100 sensor-trust heuristic per shipment.
+
+    This is a transparent demo heuristic, not a calibrated probability or
+    validated sensor-quality model. Missing readings and conflicting records
+    reduce trust; duplicate timestamps, large jumps, and stuck values are
+    counted when enough history is available.
+    """
+    s = shipments.copy()
+    r = readings.copy()
+    qmap = quality.set_index("shipment_id")["data_quality_status"].to_dict()
+    s["current_temp_c"] = pd.to_numeric(s["current_temp_c"], errors="coerce")
+    r["timestamp"] = pd.to_datetime(r["timestamp"], errors="coerce")
+    r["temperature_c"] = pd.to_numeric(r["temperature_c"], errors="coerce")
+    rows = []
+    for _, row in s.iterrows():
+        sid = row["shipment_id"]
+        hist_all = r[r["shipment_id"] == sid].copy()
+        valid = hist_all.dropna(subset=["timestamp", "temperature_c"]).sort_values("timestamp")
+        penalties = []
+        reasons = []
+        if valid.empty:
+            penalties.append(65)
+            reasons.append("No valid timestamped temperature readings")
+        else:
+            missing_ratio = 1 - len(valid) / max(len(hist_all), 1)
+            if missing_ratio > 0:
+                p = min(35, int(round(missing_ratio * 35)))
+                penalties.append(p)
+                reasons.append(f"{missing_ratio:.0%} of rows have missing/invalid fields")
+            duplicates = int(valid["timestamp"].duplicated(keep=False).sum())
+            if duplicates:
+                penalties.append(min(20, duplicates * 5))
+                reasons.append(f"{duplicates} rows share duplicate timestamps")
+            values = valid["temperature_c"].to_numpy(dtype=float)
+            jumps = int((np.abs(np.diff(values)) >= 3.0).sum()) if len(values) > 1 else 0
+            if jumps:
+                penalties.append(min(25, jumps * 10))
+                reasons.append(f"{jumps} abrupt change(s) of at least 3°C")
+            stuck = len(values) >= 5 and np.allclose(values[-5:], values[-1])
+            if stuck:
+                penalties.append(15)
+                reasons.append("Last five readings are identical")
+        qstatus = str(qmap.get(sid, "UNKNOWN")).upper()
+        if "MISSING" in qstatus or qstatus == "UNKNOWN":
+            penalties.append(45)
+            reasons.append(f"Quality report status: {qstatus}")
+        current = row["current_temp_c"]
+        if not valid.empty and pd.notna(current) and abs(float(valid.iloc[-1]["temperature_c"]) - float(current)) > 1.0:
+            penalties.append(20)
+            reasons.append("Reported current temperature differs from latest reading by >1°C")
+        score = max(0, min(100, 100 - sum(penalties)))
+        label = "HIGH TRUST" if score >= 80 else "MEDIUM TRUST" if score >= 50 else "LOW TRUST"
+        rows.append({"shipment_id": sid, "sensor_trust_score": score,
+                     "sensor_trust_label": label,
+                     "sensor_trust_reasons": "; ".join(reasons) if reasons else "No configured demo checks triggered",
+                     "valid_readings": int(len(valid)), "total_reading_rows": int(len(hist_all))})
+    return pd.DataFrame(rows)
+
+
+def compute_excursion_metrics(shipments, readings):
+    """Summarize observed history against each shipment's configured temperature band."""
+    s = shipments.copy()
+    r = readings.copy()
+    r["timestamp"] = pd.to_datetime(r["timestamp"], errors="coerce")
+    r["temperature_c"] = pd.to_numeric(r["temperature_c"], errors="coerce")
+    rows = []
+    for _, shipment in s.iterrows():
+        sid = shipment["shipment_id"]
+        low = pd.to_numeric(pd.Series([shipment["min_temp_c"]]), errors="coerce").iloc[0]
+        high = pd.to_numeric(pd.Series([shipment["max_temp_c"]]), errors="coerce").iloc[0]
+        hist = r[r["shipment_id"] == sid].dropna(subset=["timestamp", "temperature_c"]).sort_values("timestamp")
+        if hist.empty or pd.isna(low) or pd.isna(high) or low >= high:
+            rows.append({"shipment_id": sid, "valid_readings": len(hist), "peak_temp_c": np.nan,
+                         "minimum_temp_c": np.nan, "max_deviation_c": np.nan,
+                         "observed_out_of_range_minutes": np.nan, "recovery_status": "INSUFFICIENT DATA"})
+            continue
+        temps = hist["temperature_c"].to_numpy(dtype=float)
+        outside = (temps < low) | (temps > high)
+        # Estimate exposure duration only across adjacent observed samples; do not extrapolate gaps.
+        duration = 0.0
+        times = hist["timestamp"].tolist()
+        for i in range(1, len(hist)):
+            gap_min = (times[i] - times[i-1]).total_seconds() / 60
+            if 0 <= gap_min <= 15 and (outside[i] or outside[i-1]):
+                duration += gap_min
+        latest = float(temps[-1])
+        recovery = "OUT OF RANGE — REVIEW" if latest < low or latest > high else ("IN RANGE AT LAST READING" if outside.any() else "NO OBSERVED EXCURSION")
+        deviations = np.maximum(low - temps, np.maximum(temps - high, 0))
+        rows.append({"shipment_id": sid, "valid_readings": len(hist),
+                     "peak_temp_c": round(float(np.max(temps)), 2),
+                     "minimum_temp_c": round(float(np.min(temps)), 2),
+                     "max_deviation_c": round(float(np.max(deviations)), 2),
+                     "observed_out_of_range_minutes": round(float(duration), 1),
+                     "recovery_status": recovery})
+    return pd.DataFrame(rows)
+
+
+def build_priority_queue(shipments, readings, quality):
+    """Join incident, trust, and observed-excursion signals into a transparent queue."""
+    incidents = build_incident_report(shipments, readings, quality)
+    trust = analyze_sensor_trust(shipments, readings, quality)
+    excursion = compute_excursion_metrics(shipments, readings)
+    queue = incidents.merge(trust, on="shipment_id", how="left").merge(excursion, on="shipment_id", how="left")
+    queue["priority_score"] = (
+        queue["severity_score"].fillna(0) * 0.55
+        + (100 - queue["sensor_trust_score"].fillna(0)) * 0.25
+        + queue["max_deviation_c"].fillna(0).clip(upper=8) / 8 * 20
+    ).round(1).clip(0, 100)
+    queue["priority_reason"] = queue.apply(
+        lambda r: f"{r['severity_label']}; sensor trust {r['sensor_trust_score']}/100; "
+                  f"maximum observed deviation {r['max_deviation_c'] if pd.notna(r['max_deviation_c']) else 'unknown'}°C",
+        axis=1
+    )
+    return queue.sort_values(["priority_score", "severity_score"], ascending=False).reset_index(drop=True)
