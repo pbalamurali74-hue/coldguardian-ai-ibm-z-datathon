@@ -39,12 +39,30 @@ st.caption("DEMO MODE • SYNTHETIC CSV DATA • NOT A LIVE MEDICAL OR LOGISTICS
 
 try:
     shipments, facilities, readings, quality = load_inputs(ROOT / "data")
-    queue = build_priority_queue(shipments, readings, quality)
-    forecasts = experimental_linear_forecast(readings, shipments)
-    rescue = build_rescue_plan(shipments, facilities, quality)
 except Exception as exc:
     st.error(f"Could not load the demo dataset: {exc}")
     st.stop()
+
+st.markdown("### Import sensor readings")
+st.caption("Optional: upload CSV with timestamp, shipment_id, temperature_c. Only rows for shipment IDs in the shipment table are accepted. Uploads are session-only.")
+upload = st.file_uploader("Sensor readings CSV", type=["csv"], key="sensor_upload")
+if upload is not None:
+    try:
+        incoming = pd.read_csv(upload)
+        required = {"timestamp", "shipment_id", "temperature_c"}
+        if not required.issubset(set(incoming.columns)):
+            st.error("Missing required columns: timestamp, shipment_id, temperature_c.")
+        elif not set(incoming["shipment_id"].dropna().astype(str)).issubset(set(shipments["shipment_id"].astype(str))):
+            st.error("Unknown shipment IDs found. Using bundled demo readings instead.")
+        else:
+            readings = incoming.copy()
+            st.success(f"Loaded {len(readings)} reading rows for this session only.")
+    except Exception as exc:
+        st.error(f"Could not parse upload: {exc}")
+
+queue = build_priority_queue(shipments, readings, quality)
+forecasts = experimental_linear_forecast(readings, shipments)
+rescue = build_rescue_plan(shipments, facilities, quality)
 
 total = len(shipments)
 outside = int(((pd.to_numeric(shipments.current_temp_c, errors="coerce") < pd.to_numeric(shipments.min_temp_c, errors="coerce")) |
