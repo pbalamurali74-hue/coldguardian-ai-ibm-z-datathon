@@ -81,25 +81,38 @@ t=COPY[lang]
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+:root{--ink:#292524;--muted:#6d6873;--orange:#f97316;--red:#dc2626}
 html,body,[class*="css"]{font-family:'Nunito',sans-serif}
-.stApp{background:radial-gradient(ellipse at 20% 0%,#153b5b 0%,#071421 42%,#08101b 100%);color:#f4f8ff}
-.block-container{max-width:1250px;padding-top:1.3rem}
+.stApp{background:linear-gradient(180deg,#fff7ed 0%,#fff 38%,#fffaf6 100%);color:var(--ink)}
+.block-container{max-width:1320px;padding-top:1.2rem;padding-bottom:3rem}
 h1,h2,h3,p,label,div{color:inherit}
-.hero{padding:26px 28px;border:1px solid #2b5674;border-radius:24px;background:linear-gradient(120deg,rgba(14,116,144,.42),rgba(30,41,59,.8));box-shadow:0 15px 50px #0005;animation:enter .8s ease-out}
-.eyebrow{letter-spacing:3px;color:#67e8f9;font-weight:900;font-size:12px}
-.hero-title{font-size:clamp(30px,5vw,52px);font-weight:900;line-height:1.05;margin:8px 0}
-.hero-sub{font-size:clamp(16px,2vw,22px);color:#cce7f4}
-.demo-pill{display:inline-block;background:#492b1b;color:#ffd6a5;border:1px solid #a75a2c;border-radius:999px;padding:8px 14px;font-weight:900;font-size:12px;margin-top:14px}
-.panel{border:1px solid #26475d;border-radius:20px;padding:20px;background:linear-gradient(145deg,#102438,#0d1b2a);box-shadow:0 12px 32px #0003;animation:enter .65s ease-out both}
-.metric{font-size:clamp(27px,4vw,43px);font-weight:900;line-height:1.15}
-.small-label{font-size:12px;color:#a8c4d5;text-transform:uppercase;letter-spacing:1.5px;font-weight:800}
-.big-alert{font-size:clamp(25px,3vw,38px);font-weight:900;animation:pulse 1.7s infinite}
-.section{font-size:24px;font-weight:900;margin:16px 0 10px}
-div.stButton>button{width:100%;border-radius:16px;min-height:70px;font-size:17px;font-weight:900;border:1px solid #39718c;background:linear-gradient(120deg,#123c55,#164e63);color:#f2fbff;transition:transform .18s ease,box-shadow .18s ease}
-div.stButton>button:hover{transform:translateY(-3px) scale(1.01);box-shadow:0 10px 25px #22d3ee33;border-color:#67e8f9;color:#fff}
-@keyframes enter{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pulse{0%,100%{text-shadow:0 0 0 #fb7185}50%{text-shadow:0 0 22px #fb718577}}
-@keyframes glow{0%,100%{box-shadow:0 0 12px #22d3ee22}50%{box-shadow:0 0 28px #22d3ee66}}
+section[data-testid="stSidebar"]{background:#fff1e6;border-right:1px solid #fed7aa}
+[data-testid="stHeader"]{background:rgba(255,255,255,.82)}
+.hero{position:relative;overflow:hidden;padding:clamp(24px,4vw,44px);border:1px solid #fdba74;border-radius:28px;background:linear-gradient(115deg,#fff 0%,#fff1e6 52%,#fee2e2 100%);box-shadow:0 18px 48px #9a34121a;animation:enter .7s ease-out}
+.hero:after{content:'❄';position:absolute;right:3%;top:-32px;font-size:clamp(100px,18vw,230px);font-weight:900;color:#f9731612;transform:rotate(12deg);pointer-events:none}
+.eyebrow{letter-spacing:2.5px;color:#c2410c;font-weight:900;font-size:12px}
+.hero-title{font-size:clamp(34px,5.4vw,64px);font-weight:900;line-height:1.02;margin:12px 0;color:#991b1b}
+.hero-sub{font-size:clamp(17px,2.2vw,23px);color:#57534e;max-width:760px}
+.demo-pill{display:inline-block;background:#fff;color:#991b1b;border:1px solid #fca5a5;border-radius:999px;padding:9px 15px;font-weight:900;font-size:11px;margin-top:18px;box-shadow:0 5px 14px #dc262610}
+.panel{border:1px solid #f1d5c2;border-radius:22px;padding:20px;background:linear-gradient(145deg,#fff,#fffaf6);box-shadow:0 10px 28px #7c2d1210;animation:enter .55s ease-out both;transition:transform .2s,box-shadow .2s}
+.panel:hover{transform:translateY(-2px);box-shadow:0 15px 34px #9a34121a}
+.metric{font-size:clamp(28px,4vw,44px);font-weight:900;line-height:1.15;color:#292524}
+.small-label{font-size:11px;color:#9a3412;text-transform:uppercase;letter-spacing:1.6px;font-weight:900}
+.big-alert{font-size:clamp(22px,2.7vw,34px);font-weight:900;animation:pulse 1.7s infinite}
+.section{font-size:clamp(21px,2.5vw,27px);font-weight:900;margin:25px 0 10px;color:#991b1b}
+.stCaption,.stMarkdown p{color:#57534e}
+div.stButton>button{width:100%;border-radius:16px;min-height:76px;font-size:16px;font-weight:900;border:1px solid #fdba74;background:linear-gradient(120deg,#fff7ed,#ffedd5);color:#9a3412;white-space:pre-wrap;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+div.stButton>button:hover{transform:translateY(-3px);box-shadow:0 12px 24px #ea580c24;border-color:#f97316;background:linear-gradient(120deg,#ffedd5,#fee2e2);color:#7f1d1d}
+div.stButton>button:focus{border-color:#dc2626;color:#7f1d1d}
+div[data-testid="stDownloadButton"] button{background:linear-gradient(100deg,#ea580c,#dc2626);color:#fff;border:0;min-height:54px}
+div[data-testid="stDownloadButton"] button:hover{background:linear-gradient(100deg,#c2410c,#b91c1c);color:#fff}
+div[data-testid="stDataFrame"],div[data-testid="stTable"]{border:1px solid #fed7aa;border-radius:14px;overflow:hidden}
+div[data-testid="stProgressBar"]>div>div{background:linear-gradient(90deg,#f97316,#dc2626)}
+.stAlert{border-radius:16px}
+hr{border-color:#fed7aa}
+@keyframes enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{text-shadow:0 0 0 #dc262600}50%{text-shadow:0 0 18px #dc262644}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 """, unsafe_allow_html=True)
 
