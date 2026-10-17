@@ -59,9 +59,23 @@ These tests cover only the implemented checks and do not establish clinical, reg
 - Recommendations are for human-reviewed decision support only; they are not autonomous transfer or product-disposition instructions.
 - Real use would require representative data, forecast evaluation, qualified domain review, security controls, monitoring, and formal validation.
 
+## Accessible Streamlit prototype
+
+`streamlit_app.py` provides a visual-first interface with large status messages, icons, simple next-step guidance, English/Tamil/Telugu labels, and browser text-to-speech. It uses synthetic demo CSVs and is decision support only.
+
+Launch in an environment where Streamlit dependencies install successfully:
+
+```bash
+python -m pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+The IBM LinuxONE `s390x` environment previously could not build a compatible PyArrow dependency for Streamlit. For a public browser demo, deploy this repository through Streamlit Community Cloud and select `streamlit_app.py` as the app file. The account owner must sign in and authorize deployment. The Jupyter notebook remains the LinuxONE demo path.
+
 ## Project files
 
 - [`ColdGuardian_Dashboard.ipynb`](ColdGuardian_Dashboard.ipynb) — the team's Jupyter dashboard and analysis notebook (uploaded to this repository).
+- `streamlit_app.py` — visual-first, multilingual Streamlit prototype.
 - `coldguardian.py` — reusable incident, severity, facility-eligibility, and experimental forecast logic.
 - `demo.py` — small command-line demonstration using bundled synthetic CSVs.
 - `data/` — synthetic demo input CSVs.
