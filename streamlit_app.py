@@ -1,5 +1,6 @@
 from pathlib import Path
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -215,3 +216,60 @@ with st.expander("Inspect raw sensor readings"):
                        "coldguardian_sensor_readings.csv", "text/csv")
 
 st.markdown('<div class="note">Safety notice: synthetic demonstration data only. This prototype supports investigation and documentation; it does not authorize product use, disposal, or transfer.</div>', unsafe_allow_html=True)
+
+
+st.markdown('<div class="section-title">🔬 Real-data research lab</div>', unsafe_allow_html=True)
+st.write("Use this separate workspace to inspect **measured temperature data** from a public research dataset. It does not mix those measurements into the synthetic shipment/facility dashboard above.")
+st.caption("Upload a normalized CSV with timestamp and temperature_c columns; series_id is optional. See DATASET_GUIDE.md for the source and conversion steps.")
+research_file = st.file_uploader("Upload measured temperature CSV", type=["csv"], key="research_temperature_upload")
+if research_file is not None:
+    try:
+        research = pd.read_csv(research_file)
+        needed = {"timestamp", "temperature_c"}
+        if not needed.issubset(research.columns):
+            st.error("Required columns are timestamp and temperature_c. Convert the source CSV using the instructions in DATASET_GUIDE.md.")
+        else:
+            research["timestamp"] = pd.to_datetime(research["timestamp"], errors="coerce", utc=True)
+            research["temperature_c"] = pd.to_numeric(research["temperature_c"], errors="coerce")
+            research = research.dropna(subset=["timestamp", "temperature_c"]).sort_values("timestamp")
+            if "series_id" not in research.columns:
+                research["series_id"] = "uploaded-series"
+            series_options = sorted(research["series_id"].astype(str).unique().tolist())
+            chosen_series = st.selectbox("Measured sensor / series", series_options, key="research_series")
+            series = research[research["series_id"].astype(str) == chosen_series].copy().sort_values("timestamp")
+            st.caption(f"Source file: {research_file.name} · Series: {chosen_series} · Valid measurements: {len(series)}")
+            if len(series) < 10:
+                st.warning("At least 10 valid measurements are recommended for a basic chronological holdout check.")
+            st.line_chart(series.set_index("timestamp")["temperature_c"], y_label="Measured temperature (°C)")
+            st.write("**Observed-data summary**")
+            st.dataframe(pd.DataFrame([{
+                "readings": len(series), "first_timestamp": series["timestamp"].min(),
+                "last_timestamp": series["timestamp"].max(), "minimum_c": series["temperature_c"].min(),
+                "maximum_c": series["temperature_c"].max(), "mean_c": series["temperature_c"].mean(),
+                "missing_or_invalid_rows_removed": int(len(pd.read_csv(research_file)) - len(research))
+            }]), use_container_width=True, hide_index=True)
+            if len(series) >= 10:
+                values = series["temperature_c"].to_numpy(dtype=float)
+                split = max(5, int(len(values) * 0.8))
+                split = min(split, len(values) - 1)
+                train, test = values[:split], values[split:]
+                persistence_pred = np.repeat(train[-1], len(test))
+                x_train = np.arange(len(train), dtype=float)
+                x_test = np.arange(len(train), len(train) + len(test), dtype=float)
+                if len(train) >= 2 and np.std(x_train) > 0:
+                    slope, intercept = np.polyfit(x_train, train, 1)
+                    trend_pred = intercept + slope * x_test
+                else:
+                    trend_pred = persistence_pred.copy()
+                persistence_mae = float(np.mean(np.abs(test - persistence_pred)))
+                trend_mae = float(np.mean(np.abs(test - trend_pred)))
+                st.write("**Chronological holdout evaluation (last 20%; simple baselines, not a validated safety model)**")
+                st.dataframe(pd.DataFrame([
+                    {"model": "Last-value persistence baseline", "test_MAE_C": persistence_mae},
+                    {"model": "Linear-trend baseline", "test_MAE_C": trend_mae}
+                ]), use_container_width=True, hide_index=True)
+                st.caption(f"Training points: {len(train)} · Held-out points: {len(test)}. This is one time-ordered split; results may not generalize to other sensors, routes, products, or seasons.")
+            st.download_button("Export normalized measured data", series.to_csv(index=False).encode("utf-8"),
+                               "coldguardian_measured_temperature_data.csv", "text/csv")
+    except Exception as exc:
+        st.error(f"Could not analyze measured data: {exc}")
