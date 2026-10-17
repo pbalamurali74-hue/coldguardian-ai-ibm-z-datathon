@@ -61,6 +61,7 @@ These tests cover only the implemented checks and do not establish clinical, reg
 
 ## Project files
 
+- [`ColdGuardian_Dashboard.ipynb`](ColdGuardian_Dashboard.ipynb) — the team's Jupyter dashboard and analysis notebook (uploaded to this repository).
 - `coldguardian.py` — reusable incident, severity, facility-eligibility, and experimental forecast logic.
 - `demo.py` — small command-line demonstration using bundled synthetic CSVs.
 - `data/` — synthetic demo input CSVs.
@@ -96,4 +97,11 @@ List other APIs, datasets, models, or libraries only if they are actually used i
 - Submission portal: https://hack2skill.com/event/datathon-2026
 - Submission walkthrough: https://youtu.be/3_L3T__zEco?si=Q-ckiVTP6ByvgZEv
 
-**Before final submission:** add the actual Jupyter notebook that your team used, verify all code and results against the final notebook, and include a maximum-three-minute video showing the problem, supporting data, solution, tech stack, LinuxONE instance, and implemented model/workflow. Never include SSH private keys, access tokens, passwords, or server credentials in this repository.
+**Final-submission checklist:**
+- [x] Upload the Jupyter dashboard notebook used by the team.
+- [x] Include a three-minute video script in `VIDEO_SCRIPT.md`.
+- [ ] Run the final notebook top-to-bottom in the target LinuxONE/JupyterLab environment immediately before recording.
+- [ ] Record and upload a video of no more than 3 minutes showing the problem, supporting data, solution, tech stack, actual LinuxONE instance, and implemented workflow/model.
+- [ ] Confirm the submission title includes the team name and paste this repository URL into the official portal.
+
+Never include SSH private keys, access tokens, passwords, or server credentials in this repository.
