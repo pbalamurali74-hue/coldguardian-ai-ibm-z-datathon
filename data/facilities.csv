@@ -1,0 +1,4 @@
+facility_id,name,compatible_storage,spare_capacity_units,travel_time_min
+FAC001,Central Health Centre,True,300,25
+FAC002,North Clinic,True,100,15
+FAC003,South Hospital,False,500,10
