@@ -1,0 +1,4 @@
+shipment_id,product,min_temp_c,max_temp_c,current_temp_c,inventory_units,priority,timestamp,temperature_c,data_source,reading_age_min,data_quality_status
+SH001,Vaccine-A,2,8,10.2,240,High,2026-10-17 08:55:00,10.2,SYNTHETIC_DEMO,0,TEMPERATURE ABOVE MAX
+SH002,Medicine-B,2,8,6.5,120,Medium,,, , ,MISSING READING
+SH003,Vaccine-A,2,8,8.7,180,High,,, , ,MISSING READING
