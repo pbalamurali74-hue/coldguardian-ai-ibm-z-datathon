@@ -5,7 +5,7 @@ import streamlit as st
 
 from coldguardian import (
     load_inputs, build_priority_queue, experimental_linear_forecast,
-    build_rescue_plan,
+    build_rescue_plan, classify_temperature,
 )
 
 ROOT = Path(__file__).resolve().parent
